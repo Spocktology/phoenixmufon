@@ -413,8 +413,12 @@ function goTo(idx) {
 }
 
 function goNext() {
-  if (current < 3) goTo(current + 1);
-  else progressBar.style.width = '100%';
+  if (current < 3) {
+    goTo(current + 1);
+  } else {
+    progressBar.style.width = '100%';
+    setTimeout(() => goTo(0), 30000);
+  }
 }
 
 document.getElementById('btn-pause').addEventListener('click', () => {
