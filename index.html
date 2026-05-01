@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phoenix MUFON Monthly Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  #mufon-root {
+    background: #0a0a0a;
+    color: #f0e6c8;
+    font-family: 'Rajdhani', sans-serif;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.7s ease;
+  }
+  .screen.active { opacity: 1; pointer-events: all; }
+
+  #stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+
+  .scanlines {
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+  }
+
+  .content { position: relative; z-index: 2; width: 100%; max-width: 700px; margin: 0 auto; text-align: center; }
+
+  .gold-line {
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, transparent, #c9a84c, transparent);
+    margin: 0.65rem auto;
+  }
+
+  /* EMBLEM */
+  .mufon-emblem {
+    width: 88px; height: 88px;
+    border: 2px solid #c9a84c; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.9rem; position: relative;
+    animation: spin-slow 20s linear infinite;
+  }
+  .mufon-emblem::before {
+    content: ''; position: absolute; inset: 6px;
+    border: 1px solid rgba(201,168,76,0.4); border-radius: 50%;
+  }
+  .emblem-inner { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; color: #c9a84c; letter-spacing: 2px; }
+  @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  /* TYPOGRAPHY */
+  .intro-title { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 3px; line-height: 1.2; text-transform: uppercase; }
+  .intro-subtitle { font-family: 'Orbitron', monospace; font-size: 11px; color: #c9a84c; letter-spacing: 4px; margin-top: 0.2rem; }
+  .intro-body { font-size: 15px; color: rgba(240,230,200,0.85); max-width: 500px; margin: 1.1rem auto 0; line-height: 1.7; font-weight: 400; }
+  .screen-title { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 4px; color: #c9a84c; text-transform: uppercase; margin-bottom: 0.35rem; }
+  .screen-sub { font-family: 'Orbitron', monospace; font-size: 19px; font-weight: 700; color: #fff; }
+
+  /* GLOBAL CONTEXT */
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 1.1rem 0; }
+  .ctx-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px; padding: 0.9rem 0.5rem; text-align: center;
+    opacity: 0; transform: translateY(12px); transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .ctx-card.revealed { opacity: 1; transform: translateY(0); }
+  .ctx-num { font-family: 'Orbitron', monospace; font-size: 30px; font-weight: 900; color: #c9a84c; line-height: 1; }
+  .ctx-label { font-size: 11px; color: rgba(240,230,200,0.55); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
+  .ctx-sub { font-size: 11px; color: rgba(240,230,200,0.35); margin-top: 2px; }
+  .ctx-highlight { border-color: rgba(201,168,76,0.6); background: rgba(201,168,76,0.07); }
+  .ctx-highlight .ctx-num { color: #fff; }
+  .ctx-highlight .ctx-label { color: #c9a84c; }
+
+  /* FUNNEL BARS */
+  .funnel-bar { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+  .funnel-label { font-size: 11px; color: rgba(240,230,200,0.6); text-align: right; min-width: 90px; }
+  .funnel-track { flex: 1; background: rgba(255,255,255,0.06); border-radius: 2px; height: 13px; overflow: hidden; }
+  .funnel-fill { height: 100%; border-radius: 2px; width: 0; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+  .funnel-val { min-width: 36px; font-family: 'Orbitron', monospace; font-size: 11px; color: #c9a84c; }
+
+  /* AZ STATUS */
+  .az-total-row { display: flex; justify-content: center; gap: 16px; margin: 0.8rem 0; }
+  .az-big { background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.35); border-radius: 6px; padding: 0.65rem 1.4rem; }
+  .az-big-num { font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900; color: #c9a84c; line-height: 1; }
+  .az-big-label { font-size: 11px; color: rgba(240,230,200,0.55); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  .status-grid2 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 0.65rem 0; }
+  .s2card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid; border-radius: 4px; padding: 0.55rem 0.8rem; text-align: left;
+    opacity: 0; transform: translateY(8px); transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .s2card.revealed { opacity: 1; transform: translateY(0); }
+  .s2num { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: #fff; line-height: 1; }
+  .s2name { font-size: 11px; color: rgba(240,230,200,0.55); letter-spacing: 1px; text-transform: uppercase; margin-top: 3px; line-height: 1.3; }
+  .s2pct { font-size: 11px; color: rgba(240,230,200,0.32); margin-top: 2px; }
+
+  /* OUTRO */
+  .outro-cta { font-size: 13px; color: rgba(240,230,200,0.55); letter-spacing: 2px; text-transform: uppercase; margin-top: 0.6rem; }
+  .outro-url { font-family: 'Orbitron', monospace; font-size: 12px; color: #c9a84c; margin-top: 0.4rem; letter-spacing: 1px; }
+
+  /* PROGRESS + CONTROLS */
+  #progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #8b1a1a, #c9a84c); width: 0%; z-index: 10; }
+  #controls { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 6px; z-index: 20; }
+  .ctrl-btn {
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.35);
+    color: #c9a84c; font-family: 'Rajdhani', sans-serif; font-size: 12px;
+    letter-spacing: 1px; padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  }
+  .ctrl-btn:hover { background: rgba(201,168,76,0.22); }
+  #slide-indicator { position: absolute; bottom: 14px; left: 12px; font-family: 'Orbitron', monospace; font-size: 10px; color: rgba(201,168,76,0.5); z-index: 20; letter-spacing: 2px; }
+
+  /* LOADING */
+  #loading {
+    position: absolute; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #0a0a0a;
+  }
+  #loading .ld-label { font-family: 'Orbitron', monospace; font-size: 11px; color: rgba(201,168,76,0.6); letter-spacing: 3px; margin-top: 1rem; text-transform: uppercase; }
+  .ld-ring { width: 50px; height: 50px; border: 2px solid rgba(201,168,76,0.2); border-top-color: #c9a84c; border-radius: 50%; animation: spin-slow 1s linear infinite; }
+
+  #error-msg { display: none; color: #c0392b; font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; text-align: center; padding: 2rem; }
+</style>
+</head>
+<body>
+<div id="mufon-root">
+  <canvas id="stars"></canvas>
+  <div class="scanlines"></div>
+
+  <div id="loading">
+    <div class="ld-ring"></div>
+    <div class="ld-label">Loading report data...</div>
+  </div>
+  <div id="error-msg">Failed to load data.json — please check the file exists in your repository.</div>
+
+  <!-- S1: INTRO -->
+  <div class="screen" id="s1">
+    <div class="content">
+      <div class="mufon-emblem"><span class="emblem-inner">MUFON</span></div>
+      <div class="intro-title">Phoenix Chapter</div>
+      <div class="intro-subtitle">Mutual UFO Network</div>
+      <div class="gold-line"></div>
+      <p class="intro-body">
+        The Phoenix chapter of MUFON investigates and documents reports of unidentified aerial phenomena across the greater Phoenix metro and surrounding Arizona communities. Our trained field investigators collect witness testimony, analyze evidence, and contribute findings to the MUFON national database — advancing the scientific study of the UAP phenomenon.
+      </p>
+    </div>
+  </div>
+
+  <!-- S2: GLOBAL CONTEXT -->
+  <div class="screen" id="s2">
+    <div class="content">
+      <div class="screen-title">Report Activity</div>
+      <div class="screen-sub" id="s2-heading">— —</div>
+      <div class="gold-line"></div>
+      <div class="context-grid">
+        <div class="ctx-card" id="c0">
+          <div class="ctx-num" id="kpi-global">—</div>
+          <div class="ctx-label">Global</div>
+          <div class="ctx-sub">Worldwide filings</div>
+        </div>
+        <div class="ctx-card" id="c1">
+          <div class="ctx-num" id="kpi-us">—</div>
+          <div class="ctx-label">United States</div>
+          <div class="ctx-sub" id="us-pct-label">—% of global</div>
+        </div>
+        <div class="ctx-card ctx-highlight" id="c2">
+          <div class="ctx-num" id="kpi-az">—</div>
+          <div class="ctx-label">Arizona</div>
+          <div class="ctx-sub" id="az-pct-label">—% of US</div>
+        </div>
+      </div>
+      <div style="margin-top:0.5rem;">
+        <div class="funnel-bar"><span class="funnel-label">Global</span><div class="funnel-track"><div class="funnel-fill" id="fb-global" style="background:#c9a84c"></div></div><span class="funnel-val" id="fv-global">—</span></div>
+        <div class="funnel-bar"><span class="funnel-label">US</span><div class="funnel-track"><div class="funnel-fill" id="fb-us" style="background:#8b1a1a"></div></div><span class="funnel-val" id="fv-us">—</span></div>
+        <div class="funnel-bar"><span class="funnel-label">Arizona</span><div class="funnel-track"><div class="funnel-fill" id="fb-az" style="background:#9b6fc8"></div></div><span class="funnel-val" id="fv-az">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: AZ STATUS -->
+  <div class="screen" id="s3">
+    <div class="content">
+      <div class="screen-title">Arizona Report Statuses</div>
+      <div class="screen-sub" id="s3-heading">— —</div>
+      <div class="gold-line"></div>
+      <div class="az-total-row">
+        <div class="az-big">
+          <div class="az-big-num" id="az-count">—</div>
+          <div class="az-big-label">Arizona Reports</div>
+        </div>
+      </div>
+      <div class="status-grid2" id="status-grid2"></div>
+      <svg id="donut" viewBox="0 0 200 90" width="240" height="108" style="display:block;margin:0.4rem auto 0;overflow:visible">
+        <g id="donut-slices"></g>
+        <text x="100" y="48" text-anchor="middle" font-family="Orbitron,monospace" font-size="14" font-weight="900" fill="#c9a84c" id="donut-center">—</text>
+        <text x="100" y="58" text-anchor="middle" font-family="Rajdhani,sans-serif" font-size="7" fill="rgba(240,230,200,0.45)" letter-spacing="1">AZ REPORTS</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- S4: OUTRO -->
+  <div class="screen" id="s4">
+    <div class="content">
+      <div class="mufon-emblem" style="animation-duration:8s"><span class="emblem-inner">MUFON</span></div>
+      <div class="intro-title">Report a Sighting</div>
+      <div class="gold-line"></div>
+      <p class="intro-body">
+        Witnesses can submit reports 24/7 through the MUFON national reporting center. All submissions are reviewed by certified field investigators. Your account matters — every report advances the investigation.
+      </p>
+      <div class="outro-cta">Submit your report at</div>
+      <div class="outro-url">mufon.com/report-a-ufo-sighting</div>
+      <div id="outro-footer" style="margin-top:1.4rem;font-size:11px;color:rgba(240,230,200,0.3);letter-spacing:3px;text-transform:uppercase;font-family:'Orbitron',monospace;"></div>
+    </div>
+  </div>
+
+  <div id="progress-bar"></div>
+  <div id="slide-indicator">01 / 04</div>
+  <div id="controls">
+    <button class="ctrl-btn" id="btn-pause">⏸ PAUSE</button>
+    <button class="ctrl-btn" id="btn-prev">◀ PREV</button>
+    <button class="ctrl-btn" id="btn-next">NEXT ▶</button>
+  </div>
+</div>
+
+<script>
+// ─── STATUS CONFIG ───────────────────────────────────────────────────────────
+// Colors and display names for each status key from data.json
+const STATUS_CONFIG = {
+  unknown:           { label: 'Unknown',           color: '#9b6fc8' },
+  informationOnly:   { label: 'Information Only',  color: '#5a9fd4' },
+  explainable:       { label: 'Explainable',       color: '#4caf7a' },
+  hoax:              { label: 'Hoax',              color: '#c0392b' },
+  insufficientData:  { label: 'Insufficient Data', color: '#888888' },
+};
+
+// ─── STARS ───────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+const root = document.getElementById('mufon-root');
+const stars = Array.from({length:130}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: Math.random() * 1.2 + 0.2,
+  a: Math.random() * 0.6 + 0.2
+}));
+function drawStars() {
+  canvas.width = root.offsetWidth; canvas.height = root.offsetHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x*canvas.width, s.y*canvas.height, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(240,230,200,${s.a})`;
+    ctx.fill();
+  });
+}
+drawStars();
+window.addEventListener('resize', drawStars);
+
+// ─── COUNT-UP ─────────────────────────────────────────────────────────────────
+function countUp(el, target, dur) {
+  const start = performance.now();
+  function frame(now) {
+    const p = Math.min((now - start) / dur, 1);
+    el.textContent = Math.round(p * target);
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ─── DONUT ───────────────────────────────────────────────────────────────────
+function drawDonut(data) {
+  const total = data.arizona;
+  const g = document.getElementById('donut-slices');
+  g.innerHTML = '';
+  document.getElementById('donut-center').textContent = total;
+  if (total === 0) return;
+
+  const cx=100, cy=48, r=36, inner=22;
+  let angle = -Math.PI / 2;
+
+  Object.entries(data.statuses).forEach(([key, val]) => {
+    if (val === 0) return;
+    const cfg = STATUS_CONFIG[key] || { color: '#555' };
+    const sweep = (val / total) * Math.PI * 2;
+    const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+    const x2=cx+r*Math.cos(angle+sweep), y2=cy+r*Math.sin(angle+sweep);
+    const xi1=cx+inner*Math.cos(angle), yi1=cy+inner*Math.sin(angle);
+    const xi2=cx+inner*Math.cos(angle+sweep), yi2=cy+inner*Math.sin(angle+sweep);
+    const lg = sweep > Math.PI ? 1 : 0;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${lg},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${lg},0 ${xi1},${yi1} Z`);
+    path.setAttribute('fill', cfg.color);
+    path.setAttribute('opacity', '0.85');
+    g.appendChild(path);
+    angle += sweep;
+  });
+}
+
+// ─── BUILD STATUS CARDS ───────────────────────────────────────────────────────
+function buildStatusCards(data) {
+  const grid = document.getElementById('status-grid2');
+  grid.innerHTML = '';
+  const total = data.arizona;
+  Object.entries(data.statuses).forEach(([key, val]) => {
+    const cfg = STATUS_CONFIG[key] || { label: key, color: '#555' };
+    const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+    const card = document.createElement('div');
+    card.className = 's2card';
+    card.style.borderLeftColor = cfg.color;
+    card.innerHTML = `<div class="s2num">${val}</div><div class="s2name">${cfg.label}</div><div class="s2pct">${pct}% of AZ</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ─── POPULATE DATA INTO DOM ───────────────────────────────────────────────────
+function populateData(data) {
+  const monthYear = `${data.month} ${data.year}`;
+  const usPct = data.global > 0 ? Math.round((data.us / data.global) * 100) : 0;
+  const azPct = data.us > 0 ? Math.round((data.arizona / data.us) * 100) : 0;
+
+  document.getElementById('s2-heading').textContent = monthYear;
+  document.getElementById('s3-heading').textContent = monthYear;
+  document.getElementById('us-pct-label').textContent = `${usPct}% of global`;
+  document.getElementById('az-pct-label').textContent = `${azPct}% of US`;
+  document.getElementById('fv-global').textContent = data.global;
+  document.getElementById('fv-us').textContent = data.us;
+  document.getElementById('fv-az').textContent = data.arizona;
+  document.getElementById('outro-footer').textContent = `Phoenix Chapter · MUFON · ${monthYear}`;
+
+  buildStatusCards(data);
+}
+
+// ─── SCREEN ACTIVATION ────────────────────────────────────────────────────────
+let DATA = null;
+
+function activateScreen(idx) {
+  document.querySelectorAll('.screen').forEach((s,i) => s.classList.toggle('active', i===idx));
+  document.getElementById('slide-indicator').textContent = `0${idx+1} / 04`;
+
+  if (idx === 1 && DATA) {
+    const usPct = DATA.global > 0 ? (DATA.us / DATA.global * 100) : 0;
+    document.querySelectorAll('.ctx-card').forEach(c => c.classList.remove('revealed'));
+    document.getElementById('fb-global').style.width = '0';
+    document.getElementById('fb-us').style.width = '0';
+    document.getElementById('fb-az').style.width = '0';
+    document.getElementById('kpi-global').textContent = '0';
+    document.getElementById('kpi-us').textContent = '0';
+    document.getElementById('kpi-az').textContent = '0';
+
+    setTimeout(() => { document.getElementById('c0').classList.add('revealed'); countUp(document.getElementById('kpi-global'), DATA.global, 1200); }, 300);
+    setTimeout(() => { document.getElementById('c1').classList.add('revealed'); countUp(document.getElementById('kpi-us'), DATA.us, 1100); }, 700);
+    setTimeout(() => { document.getElementById('c2').classList.add('revealed'); countUp(document.getElementById('kpi-az'), DATA.arizona, 900); }, 1100);
+    setTimeout(() => { document.getElementById('fb-global').style.width = '100%'; }, 1600);
+    setTimeout(() => { document.getElementById('fb-us').style.width = usPct + '%'; }, 2000);
+    setTimeout(() => { document.getElementById('fb-az').style.width = Math.max((DATA.arizona / DATA.global * 100), 1) + '%'; }, 2400);
+  }
+
+  if (idx === 2 && DATA) {
+    document.getElementById('az-count').textContent = '0';
+    document.querySelectorAll('.s2card').forEach(c => c.classList.remove('revealed'));
+    setTimeout(() => countUp(document.getElementById('az-count'), DATA.arizona, 900), 400);
+    document.querySelectorAll('.s2card').forEach((c, i) => {
+      setTimeout(() => c.classList.add('revealed'), 600 + i * 200);
+    });
+    setTimeout(() => drawDonut(DATA), 800);
+  }
+}
+
+// ─── SLIDESHOW TIMER ─────────────────────────────────────────────────────────
+const durations = [9000, 13000, 14000, 10000];
+let current = 0, paused = false, timer = null, startTime = null, elapsed = 0;
+const progressBar = document.getElementById('progress-bar');
+
+function startTimer(dur, fromElapsed) {
+  clearTimeout(timer);
+  startTime = performance.now();
+  function tick() {
+    if (paused) return;
+    const spent = (fromElapsed || 0) + (performance.now() - startTime);
+    progressBar.style.width = Math.min(spent / dur * 100, 100) + '%';
+    if (spent >= dur) goNext();
+    else timer = setTimeout(tick, 50);
+  }
+  tick();
+}
+
+function goTo(idx) {
+  if (idx < 0 || idx >= 4) return;
+  current = idx; elapsed = 0;
+  progressBar.style.width = '0%';
+  activateScreen(idx);
+  if (!paused) startTimer(durations[idx], 0);
+}
+
+function goNext() {
+  if (current < 3) goTo(current + 1);
+  else progressBar.style.width = '100%';
+}
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? '▶ PLAY' : '⏸ PAUSE';
+  if (!paused) {
+    elapsed = elapsed + (performance.now() - startTime);
+    startTime = performance.now();
+    startTimer(durations[current], elapsed);
+  } else {
+    elapsed = elapsed + (performance.now() - startTime);
+    clearTimeout(timer);
+  }
+});
+document.getElementById('btn-prev').addEventListener('click', () => { if (current > 0) goTo(current - 1); });
+document.getElementById('btn-next').addEventListener('click', () => { if (current < 3) goTo(current + 1); });
+
+// ─── FETCH DATA & INIT ────────────────────────────────────────────────────────
+const DATA_URL = 'https://raw.githubusercontent.com/Spocktology/phoenixmufon/main/data.json';
+
+fetch(DATA_URL + '?nocache=' + Date.now())
+  .then(r => { if (!r.ok) throw new Error('Network response was not ok'); return r.json(); })
+  .then(data => {
+    DATA = data;
+    populateData(data);
+    document.getElementById('loading').style.display = 'none';
+    goTo(0);
+  })
+  .catch(err => {
+    console.error('Failed to load data.json:', err);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'block';
+  });
+</script>
+</body>
+</html>
