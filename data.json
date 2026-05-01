@@ -1,0 +1,15 @@
+{
+  "month": "April",
+  "year": "2026",
+  "global": 365,
+  "us": 279,
+  "arizona": 10,
+  "statuses": {
+    "unknown": 0,
+    "informationOnly": 1,
+    "explainable": 0,
+    "insufficientData": 0,
+    "hoax": 0,
+    "inprogress": 9
+  }
+}
