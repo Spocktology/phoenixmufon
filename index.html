@@ -295,7 +295,7 @@ function drawDonut(data) {
   document.getElementById('donut-center').textContent = total;
   if (total === 0) return;
 
-  const cx=100, cy=48, r=36, inner=22;
+  const cx=100, cy=48, r=44, inner=28;
   let angle = -Math.PI / 2;
 
   Object.entries(data.statuses).forEach(([key, val]) => {
