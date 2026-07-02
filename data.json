@@ -1,15 +1,15 @@
 {
-  "month": "May",
+  "month": "June",
   "year": "2026",
-  "global": 444,
-  "us": 379,
-  "arizona": 9,
+  "global": 500,
+  "us": 387,
+  "arizona": 20,
   "statuses": {
-    "unknown": 1,
-    "informationOnly": 0,
+    "unknown": 0,
+    "informationOnly": 2,
     "explainable": 3,
-    "insufficientData": 0,
+    "insufficientData": 3,
     "hoax": 0,
-    "inProgress": 5
+    "inProgress": 12
   }
 }
